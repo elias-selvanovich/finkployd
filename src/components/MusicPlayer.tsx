@@ -100,12 +100,14 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   }
 
   const handleProgress = (state: { played: number; playedSeconds: number }) => {
-    setPlayedFraction(state.played)
-    setPlayedSeconds(state.playedSeconds)
+    const played = isNaN(state.played) ? 0 : state.played
+    const playedSecs = isNaN(state.playedSeconds) ? 0 : state.playedSeconds
+    setPlayedFraction(played)
+    setPlayedSeconds(playedSecs)
   }
 
   const handleDuration = (dur: number) => {
-    setDuration(dur)
+    setDuration(isNaN(dur) ? 0 : dur)
   }
 
   const handleEnded = () => {
@@ -134,8 +136,9 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   }
 
   const getProgressBar = (progress: number) => {
+    const cleanProgress = isNaN(progress) ? 0 : Math.max(0, Math.min(1, progress))
     const totalChars = 24
-    const filledChars = Math.round(progress * totalChars)
+    const filledChars = Math.round(cleanProgress * totalChars)
     const emptyChars = totalChars - filledChars
     return `[${'█'.repeat(filledChars)}${'░'.repeat(emptyChars)}]`
   }
