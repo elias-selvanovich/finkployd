@@ -26,7 +26,7 @@ export const TRACKS: Track[] = [
   {
     title: 'I. PIGS ON THE WING (PART ONE)',
     duration: '01:24',
-    url: 'https://www.youtube.com/watch?v=iX8MNSINSuA', // Placeholder: Rickroll
+    url: 'https://www.youtube.com/watch?v=iX8MNSINSuA',
     glowScale: 0.85,
     glowOpacity: 0.2,
     glowSpeed: '8s',
@@ -34,7 +34,7 @@ export const TRACKS: Track[] = [
   {
     title: 'II. DOGS',
     duration: '17:05',
-    url: 'https://www.youtube.com/watch?v=tq3bYPLBcA4', // Placeholder
+    url: 'https://www.youtube.com/watch?v=tq3bYPLBcA4',
     glowScale: 1.15,
     glowOpacity: 0.45,
     glowSpeed: '4.5s',
@@ -42,7 +42,7 @@ export const TRACKS: Track[] = [
   {
     title: 'III. PIGS (THREE DIFFERENT ONES)',
     duration: '11:25',
-    url: 'https://www.youtube.com/watch?v=ZUEGeWYWbuU', // Placeholder
+    url: 'https://www.youtube.com/watch?v=ZUEGeWYWbuU',
     glowScale: 1.4,
     glowOpacity: 0.6,
     glowSpeed: '2.5s',
@@ -58,7 +58,7 @@ export const TRACKS: Track[] = [
   {
     title: 'V. PIGS ON THE WING (PART TWO)',
     duration: '01:32',
-    url: 'https://www.youtube.com/watch?v=8rMN94FXi2Y', // Placeholder
+    url: 'https://www.youtube.com/watch?v=8rMN94FXi2Y',
     glowScale: 0.85,
     glowOpacity: 0.2,
     glowSpeed: '8s',
@@ -72,6 +72,7 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   const [playedFraction, setPlayedFraction] = useState(0)
   const [playedSeconds, setPlayedSeconds] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [hasError, setHasError] = useState(false)
 
   const playerRef = useRef<any>(null)
   const Player = ReactPlayer as any
@@ -88,8 +89,14 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   }, [isPlaying, hasStarted, currentTrackIndex, playedFraction, playedSeconds, duration, onStateChange])
 
   const initiateTransmission = () => {
+    setHasError(false)
     setHasStarted(true)
     setIsPlaying(true)
+  }
+
+  const handleError = (err: any) => {
+    console.error('Playback transmission error:', err)
+    setHasError(true)
   }
 
   const handleProgress = (state: { played: number; playedSeconds: number }) => {
@@ -135,10 +142,19 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
 
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col items-center select-none font-mono">
-      {/* Offscreen YouTube Player for background streaming */}
+      {/* Active sizing hidden offscreen to satisfy Chrome background media playback policies */}
       <div 
-        className="absolute w-px h-px opacity-0 pointer-events-none overflow-hidden" 
-        style={{ top: '-9999px', left: '-9999px' }}
+        className="absolute pointer-events-none" 
+        style={{ 
+          opacity: 0.001, 
+          width: '200px', 
+          height: '200px', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          zIndex: -50,
+          overflow: 'hidden'
+        }}
       >
         <Player
           ref={playerRef}
@@ -147,6 +163,9 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
           onProgress={handleProgress}
           onDuration={handleDuration}
           onEnded={handleEnded}
+          onError={handleError}
+          width="100%"
+          height="100%"
           config={{
             youtube: {
               playerVars: {
@@ -207,14 +226,22 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
           </button>
         ) : (
           <div className="flex flex-col items-center gap-2 text-zinc-500 text-xs tracking-wider">
-            <div className="text-red-500/80 animate-pulse tracking-[0.15em] text-[10px]">
-              TRANSMISSION ACTIVE: LINEAR FEED ENGAGED
-            </div>
+            {hasError ? (
+              <div className="text-red-600 font-bold tracking-[0.1em] text-[10px] animate-pulse">
+                [ ERROR: TRANSMISSION BLOCKED // EMBED RESTRICTIONS APPLY ]
+              </div>
+            ) : (
+              <div className="text-red-500/80 animate-pulse tracking-[0.15em] text-[10px]">
+                TRANSMISSION ACTIVE: LINEAR FEED ENGAGED
+              </div>
+            )}
             <div className="font-mono text-zinc-400 mt-1 select-none tabular-nums">
               {getProgressBar(playedFraction)} {Math.round(playedFraction * 100)}%
             </div>
             <div className="text-[10px] text-zinc-600 tracking-widest mt-1 select-none uppercase">
-              No manual override permitted. Complete system control active.
+              {hasError
+                ? "Verify video URL allows external iframe embedding."
+                : "No manual override permitted. Complete system control active."}
             </div>
           </div>
         )}
