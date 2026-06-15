@@ -25,40 +25,40 @@ interface MusicPlayerProps {
 export const TRACKS: Track[] = [
   {
     title: 'I. PIGS ON THE WING (PART ONE)',
-    duration: '01:25',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder: Rickroll
+    duration: '01:24',
+    url: 'https://www.youtube.com/watch?v=iX8MNSINSuA', // Placeholder: Rickroll
     glowScale: 0.85,
     glowOpacity: 0.2,
     glowSpeed: '8s',
   },
   {
     title: 'II. DOGS',
-    duration: '17:08',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder
+    duration: '17:05',
+    url: 'https://www.youtube.com/watch?v=tq3bYPLBcA4', // Placeholder
     glowScale: 1.15,
     glowOpacity: 0.45,
     glowSpeed: '4.5s',
   },
   {
     title: 'III. PIGS (THREE DIFFERENT ONES)',
-    duration: '11:28',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder
+    duration: '11:25',
+    url: 'https://www.youtube.com/watch?v=ZUEGeWYWbuU', // Placeholder
     glowScale: 1.4,
     glowOpacity: 0.6,
     glowSpeed: '2.5s',
   },
   {
     title: 'IV. SHEEP',
-    duration: '10:20',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder
+    duration: '10:19',
+    url: 'https://www.youtube.com/watch?v=B2MxUCENw2s',
     glowScale: 1.25,
     glowOpacity: 0.5,
     glowSpeed: '3.5s',
   },
   {
     title: 'V. PIGS ON THE WING (PART TWO)',
-    duration: '01:25',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder
+    duration: '01:32',
+    url: 'https://www.youtube.com/watch?v=8rMN94FXi2Y', // Placeholder
     glowScale: 0.85,
     glowOpacity: 0.2,
     glowSpeed: '8s',
@@ -66,8 +66,9 @@ export const TRACKS: Track[] = [
 ]
 
 export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
+  const [hasStarted, setHasStarted] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(-1) // -1 is idle/unstarted
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
   const [playedFraction, setPlayedFraction] = useState(0)
   const [playedSeconds, setPlayedSeconds] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -79,18 +80,16 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   useEffect(() => {
     onStateChange({
       isPlaying,
-      currentTrackIndex,
+      currentTrackIndex: hasStarted ? currentTrackIndex : -1,
       playedFraction,
       playedSeconds,
       duration,
     })
-  }, [isPlaying, currentTrackIndex, playedFraction, playedSeconds, duration, onStateChange])
+  }, [isPlaying, hasStarted, currentTrackIndex, playedFraction, playedSeconds, duration, onStateChange])
 
   const initiateTransmission = () => {
-    if (currentTrackIndex === -1) {
-      setCurrentTrackIndex(0)
-      setIsPlaying(true)
-    }
+    setHasStarted(true)
+    setIsPlaying(true)
   }
 
   const handleProgress = (state: { played: number; playedSeconds: number }) => {
@@ -112,7 +111,8 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
     } else {
       // Completed the entire album transmission
       setIsPlaying(false)
-      setCurrentTrackIndex(-1)
+      setHasStarted(false)
+      setCurrentTrackIndex(0)
       setPlayedFraction(0)
       setPlayedSeconds(0)
       setDuration(0)
@@ -135,35 +135,36 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
 
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col items-center select-none font-mono">
-      {/* Hidden React Player */}
-      {currentTrackIndex >= 0 && (
-        <div style={{ display: 'none' }}>
-          <Player
-            ref={playerRef}
-            url={TRACKS[currentTrackIndex].url}
-            playing={isPlaying}
-            onProgress={handleProgress}
-            onDuration={handleDuration}
-            onEnded={handleEnded}
-            config={{
-              youtube: {
-                playerVars: {
-                  controls: 0,
-                  autoplay: 1,
-                  modestbranding: 1,
-                  rel: 0,
-                },
+      {/* Offscreen YouTube Player for background streaming */}
+      <div 
+        className="absolute w-px h-px opacity-0 pointer-events-none overflow-hidden" 
+        style={{ top: '-9999px', left: '-9999px' }}
+      >
+        <Player
+          ref={playerRef}
+          url={TRACKS[currentTrackIndex].url}
+          playing={isPlaying}
+          onProgress={handleProgress}
+          onDuration={handleDuration}
+          onEnded={handleEnded}
+          config={{
+            youtube: {
+              playerVars: {
+                controls: 0,
+                autoplay: 1,
+                modestbranding: 1,
+                rel: 0,
               },
-            }}
-          />
-        </div>
-      )}
+            },
+          }}
+        />
+      </div>
 
       {/* Tracklist Display */}
       <div className="w-full mb-10 text-left space-y-4">
         {TRACKS.map((track, index) => {
-          const isCurrent = index === currentTrackIndex
-          const isPast = index < currentTrackIndex && currentTrackIndex !== -1
+          const isCurrent = hasStarted && index === currentTrackIndex
+          const isPast = hasStarted && index < currentTrackIndex
 
           let textClass = 'text-zinc-800' // Default idle / upcoming
           if (isCurrent) {
@@ -197,7 +198,7 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
 
       {/* Control Actions / Status Terminal */}
       <div className="w-full text-center">
-        {currentTrackIndex === -1 ? (
+        {!hasStarted ? (
           <button
             onClick={initiateTransmission}
             className="px-6 py-3 border border-zinc-800 text-zinc-400 hover:text-red-500 hover:border-red-800 hover:shadow-[0_0_15px_rgba(239,68,68,0.15)] text-xs tracking-[0.2em] transition-all duration-300 cursor-pointer bg-black/40"
