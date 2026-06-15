@@ -142,40 +142,18 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
 
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col items-center select-none font-mono">
-      {/* Active sizing hidden offscreen to satisfy Chrome background media playback policies */}
-      <div 
-        className="absolute pointer-events-none" 
-        style={{ 
-          opacity: 0.001, 
-          width: '200px', 
-          height: '200px', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)',
-          zIndex: -50,
-          overflow: 'hidden'
-        }}
-      >
+      {/* Invisible React Player matching teconfloyd's implementation */}
+      <div className="hidden">
         <Player
           ref={playerRef}
-          url={TRACKS[currentTrackIndex].url}
+          src={TRACKS[currentTrackIndex].url}
           playing={isPlaying}
           onProgress={handleProgress}
           onDuration={handleDuration}
           onEnded={handleEnded}
           onError={handleError}
-          width="100%"
-          height="100%"
-          config={{
-            youtube: {
-              playerVars: {
-                controls: 0,
-                autoplay: 1,
-                modestbranding: 1,
-                rel: 0,
-              },
-            },
-          }}
+          width="0"
+          height="0"
         />
       </div>
 

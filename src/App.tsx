@@ -32,11 +32,6 @@ function App() {
       {/* Subtle grid backdrop for industrial visual flavor */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(39,39,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(39,39,42,0.06)_1px,transparent_1px)] bg-[size:36px_36px] [mask-image:radial-gradient(ellipse_65%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none z-0"></div>
 
-      {/* Top Header - Orwellian system monitor */}
-      <header className="w-full text-center z-10 font-mono text-[9px] sm:text-[10px] text-zinc-700 tracking-[0.25em] uppercase select-none">
-        FINK PLOYD // SYSTEM STATE: {playerState.isPlaying ? 'TRANSMITTING FEED' : 'STANDBY'}
-      </header>
-
       {/* Center Section: Logo + Pulsing Ambient Glow */}
       <main className="flex-grow flex flex-col justify-center items-center relative py-12 sm:py-20 z-10">
         <div className="logo-container relative flex items-center justify-center w-full px-6">
