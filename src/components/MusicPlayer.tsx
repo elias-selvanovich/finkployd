@@ -73,7 +73,7 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
   const [playedSeconds, setPlayedSeconds] = useState(0)
-  const [duration, setDuration] = useState(0)
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
 
   const totalElapsedSeconds = hasStarted && currentTrackIndex >= 0
     ? TRACK_START_SECONDS[currentTrackIndex] + playedSeconds
@@ -84,6 +84,16 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
 
   const playerRef = useRef<any>(null)
   const Player = ReactPlayer as any
+
+  // Steady local timer to drive the progress bar once per second
+  // completely decoupled from browser background iframe/polling throttles
+  useEffect(() => {
+    if (!isTimerRunning) return
+    const interval = setInterval(() => {
+      setPlayedSeconds((prev) => prev + 1)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [isTimerRunning])
 
   // Report state changes up to App.tsx
   useEffect(() => {
@@ -105,22 +115,32 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   const handleError = (err: any) => {
     console.error('Playback transmission error:', err)
     setHasError(true)
+    setIsTimerRunning(false)
   }
 
-  const handleProgress = (state: { played: number; playedSeconds: number }) => {
-    const playedSecs = isNaN(state.playedSeconds) ? 0 : state.playedSeconds
-    setPlayedSeconds(playedSecs)
+  const handlePlay = () => {
+    setIsTimerRunning(true)
+    setHasError(false)
   }
 
-  const handleDuration = (dur: number) => {
-    setDuration(isNaN(dur) ? 0 : dur)
+  const handlePause = () => {
+    setIsTimerRunning(false)
   }
+
+  const handleBuffer = () => {
+    setIsTimerRunning(false)
+  }
+
+  const handleBufferEnd = () => {
+    setIsTimerRunning(true)
+  }
+
 
   const handleEnded = () => {
+    setIsTimerRunning(false)
     if (currentTrackIndex < TRACKS.length - 1) {
       // Advance to the next track
       setPlayedSeconds(0)
-      setDuration(0)
       setCurrentTrackIndex(currentTrackIndex + 1)
     } else {
       // Completed the entire album transmission
@@ -128,7 +148,6 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
       setHasStarted(false)
       setCurrentTrackIndex(0)
       setPlayedSeconds(0)
-      setDuration(0)
     }
   }
 
@@ -167,8 +186,10 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
           ref={playerRef}
           src={TRACKS[currentTrackIndex].url}
           playing={isPlaying}
-          onProgress={handleProgress}
-          onDuration={handleDuration}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onBuffer={handleBuffer}
+          onBufferEnd={handleBufferEnd}
           onEnded={handleEnded}
           onError={handleError}
           width="100%"
@@ -205,7 +226,7 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
                 <span className="tracking-widest text-xs sm:text-sm">{track.title}</span>
               </div>
               <span className="text-xs tracking-widest tabular-nums">
-                {isCurrent && duration > 0 ? formatTime(playedSeconds) : track.duration}
+                {isCurrent ? formatTime(playedSeconds) : track.duration}
               </span>
             </div>
           )
