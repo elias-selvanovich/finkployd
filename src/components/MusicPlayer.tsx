@@ -65,13 +65,21 @@ export const TRACKS: Track[] = [
   },
 ]
 
+const TRACK_START_SECONDS = [0, 84, 1109, 1794, 2413]
+const TOTAL_ALBUM_SECONDS = 2505
+
 export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   const [hasStarted, setHasStarted] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
-  const [playedFraction, setPlayedFraction] = useState(0)
   const [playedSeconds, setPlayedSeconds] = useState(0)
   const [duration, setDuration] = useState(0)
+
+  const totalElapsedSeconds = hasStarted && currentTrackIndex >= 0
+    ? TRACK_START_SECONDS[currentTrackIndex] + playedSeconds
+    : 0
+
+  const albumProgressFraction = totalElapsedSeconds / TOTAL_ALBUM_SECONDS
   const [hasError, setHasError] = useState(false)
 
   const playerRef = useRef<any>(null)
@@ -82,11 +90,11 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
     onStateChange({
       isPlaying,
       currentTrackIndex: hasStarted ? currentTrackIndex : -1,
-      playedFraction,
-      playedSeconds,
-      duration,
+      playedFraction: hasStarted ? albumProgressFraction : 0,
+      playedSeconds: totalElapsedSeconds,
+      duration: TOTAL_ALBUM_SECONDS,
     })
-  }, [isPlaying, hasStarted, currentTrackIndex, playedFraction, playedSeconds, duration, onStateChange])
+  }, [isPlaying, hasStarted, currentTrackIndex, albumProgressFraction, totalElapsedSeconds, onStateChange])
 
   const initiateTransmission = () => {
     setHasError(false)
@@ -100,9 +108,7 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   }
 
   const handleProgress = (state: { played: number; playedSeconds: number }) => {
-    const played = isNaN(state.played) ? 0 : state.played
     const playedSecs = isNaN(state.playedSeconds) ? 0 : state.playedSeconds
-    setPlayedFraction(played)
     setPlayedSeconds(playedSecs)
   }
 
@@ -113,7 +119,6 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   const handleEnded = () => {
     if (currentTrackIndex < TRACKS.length - 1) {
       // Advance to the next track
-      setPlayedFraction(0)
       setPlayedSeconds(0)
       setDuration(0)
       setCurrentTrackIndex(currentTrackIndex + 1)
@@ -122,7 +127,6 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
       setIsPlaying(false)
       setHasStarted(false)
       setCurrentTrackIndex(0)
-      setPlayedFraction(0)
       setPlayedSeconds(0)
       setDuration(0)
     }
@@ -146,14 +150,14 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col items-center select-none font-mono">
       {/* Invisible React Player styled to avoid Chrome background iframe throttling */}
-      <div 
-        className="absolute pointer-events-none" 
-        style={{ 
-          opacity: 0.001, 
-          width: '200px', 
-          height: '200px', 
-          top: '50%', 
-          left: '50%', 
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          opacity: 0.001,
+          width: '200px',
+          height: '200px',
+          top: '50%',
+          left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: -50,
           overflow: 'hidden'
@@ -195,7 +199,7 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
                   {isCurrent ? (
                     <span className="text-red-600 animate-pulse">█</span>
                   ) : (
-                    `${index + 1}.`
+                    ``
                   )}
                 </span>
                 <span className="tracking-widest text-xs sm:text-sm">{track.title}</span>
@@ -229,9 +233,12 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
               </div>
             )}
             <div className="font-mono text-zinc-400 mt-1 select-none tabular-nums">
-              {getProgressBar(playedFraction)} {Math.round(playedFraction * 100)}%
+              {getProgressBar(albumProgressFraction)} {Math.round(albumProgressFraction * 100)}%
             </div>
-            <div className="text-[10px] text-zinc-600 tracking-widest mt-1 select-none uppercase">
+            <div className="text-[10px] text-zinc-500 tracking-wider mt-1 select-none tabular-nums uppercase">
+              ELAPSED: {formatTime(totalElapsedSeconds)} / 41:45
+            </div>
+            <div className="text-[9px] text-zinc-700 tracking-widest mt-2 select-none uppercase">
               {hasError
                 ? "Verify video URL allows external iframe embedding."
                 : "No manual override permitted. Complete system control active."}
