@@ -28,7 +28,7 @@ export const TRACKS: Track[] = [
     duration: '01:24',
     url: 'https://www.youtube.com/watch?v=iX8MNSINSuA',
     glowScale: 0.85,
-    glowOpacity: 0.2,
+    glowOpacity: 0.6,
     glowSpeed: '8s',
   },
   {
@@ -36,7 +36,7 @@ export const TRACKS: Track[] = [
     duration: '17:05',
     url: 'https://www.youtube.com/watch?v=tq3bYPLBcA4',
     glowScale: 1.15,
-    glowOpacity: 0.45,
+    glowOpacity: 0.7,
     glowSpeed: '4.5s',
   },
   {
@@ -44,7 +44,7 @@ export const TRACKS: Track[] = [
     duration: '11:25',
     url: 'https://www.youtube.com/watch?v=ZUEGeWYWbuU',
     glowScale: 1.4,
-    glowOpacity: 0.6,
+    glowOpacity: 0.8,
     glowSpeed: '2.5s',
   },
   {
@@ -52,7 +52,7 @@ export const TRACKS: Track[] = [
     duration: '10:19',
     url: 'https://www.youtube.com/watch?v=B2MxUCENw2s',
     glowScale: 1.25,
-    glowOpacity: 0.5,
+    glowOpacity: 0.9,
     glowSpeed: '3.5s',
   },
   {
@@ -60,7 +60,7 @@ export const TRACKS: Track[] = [
     duration: '01:32',
     url: 'https://www.youtube.com/watch?v=8rMN94FXi2Y',
     glowScale: 0.85,
-    glowOpacity: 0.2,
+    glowOpacity: 0.6,
     glowSpeed: '8s',
   },
 ]
@@ -145,8 +145,20 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
 
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col items-center select-none font-mono">
-      {/* Invisible React Player matching teconfloyd's implementation */}
-      <div className="hidden">
+      {/* Invisible React Player styled to avoid Chrome background iframe throttling */}
+      <div 
+        className="absolute pointer-events-none" 
+        style={{ 
+          opacity: 0.001, 
+          width: '200px', 
+          height: '200px', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          zIndex: -50,
+          overflow: 'hidden'
+        }}
+      >
         <Player
           ref={playerRef}
           src={TRACKS[currentTrackIndex].url}
@@ -155,8 +167,8 @@ export default function MusicPlayer({ onStateChange }: MusicPlayerProps) {
           onDuration={handleDuration}
           onEnded={handleEnded}
           onError={handleError}
-          width="0"
-          height="0"
+          width="100%"
+          height="100%"
         />
       </div>
 
